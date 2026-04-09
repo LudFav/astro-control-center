@@ -1,0 +1,10 @@
+{
+  "name": "astro-mobile-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile proxy for Astro Control Center and OnStepX",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
