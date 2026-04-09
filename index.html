@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Astro Control Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+    <link rel="stylesheet" href="./css/tailwind.local.css" />
+    <script src="./astronomy.browser.min.js"></script>
+    <script src="./d3.v7.min.js"></script>
+    <script src="./celestial.min.js"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -27,6 +29,9 @@
       }
       .toast {
         animation: fadeInOut 2.4s ease both;
+      }
+      #skyMap .celestial-map {
+        touch-action: manipulation;
       }
       @keyframes fadeInOut {
         0% {
@@ -75,6 +80,7 @@
         <div class="mt-2 p-2 rounded-lg bg-black/30 text-sm">
           <p class="text-red-400 text-xs mb-1">Météo locale</p>
           <p id="weather">Temp: -- | Nuages: -- | Humidité: --</p>
+          <p id="astroForecast" class="text-xs text-red-300 mt-1">Astro seeing/transparence: -- / --</p>
         </div>
       </section>
 
@@ -83,7 +89,40 @@
           <h2 class="font-semibold text-red-300">Recommandations objets</h2>
           <span id="selectedInfo" class="text-xs text-red-400">Aucun objet sélectionné</span>
         </div>
+        <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
+          <select id="filterType" class="p-2 rounded-lg bg-black/40 border border-red-900/70">
+            <option value="all">Type: Tous</option>
+            <option value="dso">Type: DSO</option>
+            <option value="planet">Type: Planetes/Lune</option>
+          </select>
+          <select id="filterHemisphere" class="p-2 rounded-lg bg-black/40 border border-red-900/70">
+            <option value="auto">Hemisphere: Auto GPS</option>
+            <option value="north">Hemisphere: Nord</option>
+            <option value="south">Hemisphere: Sud</option>
+            <option value="all">Hemisphere: Tous</option>
+          </select>
+        </div>
+        <div class="flex items-center justify-between mb-2 text-xs text-red-300">
+          <label class="flex items-center gap-2">
+            <input id="filterVisibleOnly" type="checkbox" class="accent-red-500" checked />
+            <span>Visibles uniquement (alt &gt; 20°)</span>
+          </label>
+          <span id="filterHint" class="text-red-400">Auto</span>
+        </div>
         <div id="objectList" class="space-y-2 max-h-56 overflow-auto pr-1"></div>
+        <div class="mt-3 p-2 rounded-lg bg-black/30 text-xs">
+          <p class="text-red-400">Fiche objet (VizieR)</p>
+          <p id="objectMeta" class="mt-1 text-red-200">Magnitude: -- | Taille: -- | Type: --</p>
+          <p id="objectMetaSource" class="mt-1 text-red-400">Source: --</p>
+        </div>
+      </section>
+
+      <section class="night-panel rounded-2xl p-3">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-semibold text-red-300">Carte du ciel tactile</h2>
+          <span id="skyMapStatus" class="text-xs text-red-400">En attente...</span>
+        </div>
+        <div id="skyMap" class="rounded-lg overflow-hidden border border-red-900/70 min-h-[220px] bg-black/30"></div>
       </section>
 
       <section class="night-panel rounded-2xl p-3">
@@ -116,6 +155,12 @@
         <input id="onstepIp" class="w-full mb-2 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="192.168.0.1" />
         <label class="block text-xs text-red-400 mb-1" for="weatherKey">OpenWeatherMap API Key</label>
         <input id="weatherKey" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="api-key..." />
+        <label class="block text-xs text-red-400 mb-1" for="proxyBaseUrl">Proxy API URL (optionnel)</label>
+        <input id="proxyBaseUrl" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="https://ton-proxy.exemple.com" />
+        <label class="block text-xs text-red-400 mb-1" for="proxyApiToken">Proxy API Token (optionnel)</label>
+        <input id="proxyApiToken" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="token-bearer..." />
+        <label class="block text-xs text-red-400 mb-1" for="bortleIndex">Indice Bortle (1-9)</label>
+        <input id="bortleIndex" type="number" min="1" max="9" step="1" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="5" />
         <label class="block text-xs text-red-400 mb-1" for="fwProfile">Profil firmware</label>
         <select id="fwProfile" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500">
           <option value="auto">Auto-detect</option>
@@ -134,23 +179,55 @@
 
     <script>
       const STORAGE_KEY = "astro-control-center-config";
-      const objectCatalog = [
+      const seedDsoCatalog = [
         { name: "M31", type: "dso", ra: 0.712, dec: 41.269, label: "Galaxie d'Andromede" },
         { name: "M42", type: "dso", ra: 5.588, dec: -5.391, label: "Nebuleuse d'Orion" },
         { name: "M45", type: "dso", ra: 3.792, dec: 24.117, label: "Pleiades" },
-        { name: "M51", type: "dso", ra: 13.497, dec: 47.195, label: "Galaxie du Tourbillon" },
+        { name: "M51", type: "dso", ra: 13.497, dec: 47.195, label: "Galaxie du Tourbillon" }
+      ];
+      const planetCatalog = [
         { name: "Jupiter", type: "planet", body: "Jupiter" },
         { name: "Saturne", type: "planet", body: "Saturn" },
         { name: "Mars", type: "planet", body: "Mars" },
         { name: "Lune", type: "planet", body: "Moon" }
       ];
+      let objectCatalog = [...seedDsoCatalog, ...planetCatalog];
+      const localDsoFallback = {
+        M31: { magnitude: "3.4", size: "190x60 arcmin", type: "Galaxie spirale" },
+        M42: { magnitude: "4.0", size: "85x60 arcmin", type: "Nebuleuse diffuse" },
+        M45: { magnitude: "1.6", size: "110 arcmin", type: "Amas ouvert" },
+        M51: { magnitude: "8.4", size: "11x7 arcmin", type: "Galaxie spirale" }
+      };
+      const messierToNgc = {
+        M31: "NGC 224",
+        M42: "NGC 1976",
+        M45: "NGC 1432",
+        M51: "NGC 5194"
+      };
 
       const state = {
-        config: { onstepIp: "192.168.0.1", weatherKey: "", fwProfile: "auto" },
+        config: {
+          onstepIp: "192.168.0.1",
+          weatherKey: "",
+          fwProfile: "auto",
+          proxyBaseUrl: "",
+          proxyApiToken: "",
+          bortleIndex: 5
+        },
         observer: null,
         selectedObjectName: null,
+        selectedObjectMeta: null,
         cachedObjects: [],
+        catalogStats: { messier: 0, dsos20: 0, constellations: 0, planetsJson: 0 },
         lastWeatherFetch: 0,
+        last7TimerFetch: 0,
+        networkNoticeShown: false,
+        skyMapInitialized: false,
+        filters: {
+          type: "all",
+          hemisphere: "auto",
+          visibleOnly: true
+        },
         api: {
           statusEndpoint: null,
           gotoEndpoint: null,
@@ -168,8 +245,17 @@
         gps: document.getElementById("gps"),
         lst: document.getElementById("lst"),
         weather: document.getElementById("weather"),
+        astroForecast: document.getElementById("astroForecast"),
         objectList: document.getElementById("objectList"),
+        objectMeta: document.getElementById("objectMeta"),
+        objectMetaSource: document.getElementById("objectMetaSource"),
+        skyMap: document.getElementById("skyMap"),
+        skyMapStatus: document.getElementById("skyMapStatus"),
         selectedInfo: document.getElementById("selectedInfo"),
+        filterType: document.getElementById("filterType"),
+        filterHemisphere: document.getElementById("filterHemisphere"),
+        filterVisibleOnly: document.getElementById("filterVisibleOnly"),
+        filterHint: document.getElementById("filterHint"),
         gotoBtn: document.getElementById("gotoBtn"),
         abortBtn: document.getElementById("abortBtn"),
         openConfig: document.getElementById("openConfig"),
@@ -178,6 +264,9 @@
         configModal: document.getElementById("configModal"),
         onstepIp: document.getElementById("onstepIp"),
         weatherKey: document.getElementById("weatherKey"),
+        proxyBaseUrl: document.getElementById("proxyBaseUrl"),
+        proxyApiToken: document.getElementById("proxyApiToken"),
+        bortleIndex: document.getElementById("bortleIndex"),
         fwProfile: document.getElementById("fwProfile"),
         toastArea: document.getElementById("toastArea")
       };
@@ -218,11 +307,49 @@
       function applyConfigUI() {
         dom.onstepIp.value = state.config.onstepIp || "";
         dom.weatherKey.value = state.config.weatherKey || "";
+        dom.proxyBaseUrl.value = state.config.proxyBaseUrl || "";
+        dom.proxyApiToken.value = state.config.proxyApiToken || "";
+        dom.bortleIndex.value = Number(state.config.bortleIndex ?? 5);
         dom.fwProfile.value = state.config.fwProfile || "auto";
       }
 
       function getOnStepBaseUrl() {
         return `http://${state.config.onstepIp || "192.168.0.1"}`;
+      }
+
+      function isPrivateIpv4(hostname) {
+        if (!hostname || !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return false;
+        const [a, b] = hostname.split(".").map(Number);
+        if (a === 10) return true;
+        if (a === 127) return true;
+        if (a === 192 && b === 168) return true;
+        if (a === 172 && b >= 16 && b <= 31) return true;
+        return false;
+      }
+
+      function normalizeBaseUrl(baseUrl) {
+        return (baseUrl || "").trim().replace(/\/+$/, "");
+      }
+
+      function getApiBaseUrl() {
+        const proxy = normalizeBaseUrl(state.config.proxyBaseUrl);
+        if (proxy) return proxy;
+        return getOnStepBaseUrl();
+      }
+
+      function isBrowserLikelyToBlockDirectLocalHttp() {
+        const direct = getOnStepBaseUrl();
+        const pageIsHttps = window.location.protocol === "https:";
+        const host = state.config.onstepIp || "192.168.0.1";
+        return pageIsHttps && direct.startsWith("http://") && isPrivateIpv4(host);
+      }
+
+      function ensureNetworkModeNotice() {
+        if (state.networkNoticeShown) return;
+        if (!state.config.proxyBaseUrl && isBrowserLikelyToBlockDirectLocalHttp()) {
+          showToast("HTTPS + IP locale: configure un Proxy API URL", "error");
+          state.networkNoticeShown = true;
+        }
       }
 
       function withTimeout(promise, timeoutMs = 2800) {
@@ -242,13 +369,23 @@
         const response = await withTimeout(
           fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
             body: JSON.stringify(payload)
           }),
           timeoutMs
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response;
+      }
+
+      function buildApiHeaders() {
+        const headers = {};
+        const token = (state.config.proxyApiToken || "").trim();
+        const usingProxy = Boolean(normalizeBaseUrl(state.config.proxyBaseUrl));
+        if (usingProxy && token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+        return headers;
       }
 
       function pad2(n) {
@@ -279,7 +416,7 @@
       }
 
       function getStatusCandidates() {
-        const base = getOnStepBaseUrl();
+        const base = getApiBaseUrl();
         const profile = state.config.fwProfile || "auto";
         if (profile === "native-v1") return [`${base}/api/v1/status`];
         if (profile === "legacy-rest") return [`${base}/status`, `${base}/api/status`];
@@ -287,7 +424,7 @@
       }
 
       function getCommandCandidates(type) {
-        const base = getOnStepBaseUrl();
+        const base = getApiBaseUrl();
         const profile = state.config.fwProfile || "auto";
         const map = {
           goto: {
@@ -310,13 +447,20 @@
       }
 
       async function detectOnStepApi(force = false) {
+        ensureNetworkModeNotice();
+        if (!state.config.proxyBaseUrl && isBrowserLikelyToBlockDirectLocalHttp()) {
+          state.api.statusEndpoint = null;
+          state.api.profileDetected = "blocked";
+          state.api.lastDetectAt = Date.now();
+          return;
+        }
         if (!force && Date.now() - state.api.lastDetectAt < 20000 && state.api.statusEndpoint) {
           return;
         }
         const candidates = getStatusCandidates();
         for (const url of candidates) {
           try {
-            const data = await fetchJson(url, {}, 2200);
+            const data = await fetchJson(url, { headers: buildApiHeaders() }, 2200);
             state.api.statusEndpoint = url;
             state.api.profileDetected = url.includes("/api/v1/") ? "native-v1" : "legacy-rest";
             state.api.lastDetectAt = Date.now();
@@ -383,8 +527,328 @@
         return { altitude: hor.altitude, azimuth: hor.azimuth, visible: hor.altitude > 20 };
       }
 
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function computeBaseAltitudeScore(altitude) {
+        if (!Number.isFinite(altitude)) return 0;
+        if (altitude > 20) return Math.round(Math.min(100, (altitude - 20) * 2.5 + 50));
+        return Math.max(0, Math.round(altitude + 20));
+      }
+
+      function classifyObjectType(obj) {
+        if (obj.type === "dso") return "dso";
+        if (obj.name === "Lune") return "moon";
+        return "planet";
+      }
+
+      function normalizeCell(v) {
+        return String(v ?? "").replace(/"/g, "").trim();
+      }
+
+      function raDegToHours(raDeg) {
+        const normalized = ((Number(raDeg) % 360) + 360) % 360;
+        return normalized / 15;
+      }
+
+      function mapDsoType(code) {
+        const key = String(code || "").toLowerCase();
+        const m = {
+          s: "Galaxie",
+          e: "Galaxie elliptique",
+          i: "Galaxie irreguliere",
+          gc: "Amas globulaire",
+          oc: "Amas ouvert",
+          pn: "Nebuleuse planetaire",
+          rn: "Nebuleuse reflexion",
+          snr: "Remnant supernova",
+          sfr: "Region HII",
+          pos: "Asterisme/position"
+        };
+        return m[key] || key || "dso";
+      }
+
+      function convertGeoFeatureToDso(feature) {
+        const props = feature?.properties || {};
+        const coords = feature?.geometry?.coordinates || [];
+        if (!Array.isArray(coords) || coords.length < 2) return null;
+        const raDeg = Number(coords[0]);
+        const decDeg = Number(coords[1]);
+        if (!Number.isFinite(raDeg) || !Number.isFinite(decDeg)) return null;
+        const name = props.name || feature.id;
+        if (!name) return null;
+        return {
+          name: String(name),
+          type: "dso",
+          ra: raDegToHours(raDeg),
+          dec: decDeg,
+          label: props.alt || props.desig || mapDsoType(props.type),
+          sourceTypeCode: props.type || "",
+          mag: props.mag,
+          dim: props.dim,
+          designation: props.desig || ""
+        };
+      }
+
+      async function loadJsonSafe(path) {
+        try {
+          const resp = await withTimeout(fetch(path), 5000);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return await resp.json();
+        } catch (_e) {
+          return null;
+        }
+      }
+
+      function dedupeByName(items) {
+        const byName = new Map();
+        items.forEach((it) => {
+          if (!it?.name) return;
+          if (!byName.has(it.name)) byName.set(it.name, it);
+        });
+        return [...byName.values()];
+      }
+
+      async function loadOfflineCatalogs() {
+        const [messier, dsos20, planetsJson, constellations] = await Promise.all([
+          loadJsonSafe("./messier.json"),
+          loadJsonSafe("./dsos.20.json"),
+          loadJsonSafe("./planets.json"),
+          loadJsonSafe("./constellations.json")
+        ]);
+
+        const imported = [];
+        if (Array.isArray(messier?.features)) {
+          const list = messier.features.map(convertGeoFeatureToDso).filter(Boolean);
+          state.catalogStats.messier = list.length;
+          imported.push(...list);
+        }
+        if (Array.isArray(dsos20?.features)) {
+          const list = dsos20.features.map(convertGeoFeatureToDso).filter(Boolean);
+          state.catalogStats.dsos20 = list.length;
+          imported.push(...list);
+        }
+
+        if (planetsJson && typeof planetsJson === "object") {
+          state.catalogStats.planetsJson = Object.keys(planetsJson).length;
+          const keyByBody = { Jupiter: "jup", Saturn: "sat", Mars: "mar", Moon: "lun" };
+          planetCatalog.forEach((p) => {
+            const k = keyByBody[p.body];
+            const meta = planetsJson[k];
+            if (meta?.fr) p.label = meta.fr;
+          });
+        }
+
+        if (Array.isArray(constellations?.features)) {
+          state.catalogStats.constellations = constellations.features.length;
+          dom.skyMapStatus.textContent = `Carte active | ${state.catalogStats.constellations} constellations chargees`;
+        }
+
+        const fallbackDsos = seedDsoCatalog.map((o) => ({ ...o }));
+        const dsoCatalog = dedupeByName(imported.length ? imported : fallbackDsos);
+        objectCatalog = [...dsoCatalog, ...planetCatalog];
+        const msg = `Catalogues offline: M=${state.catalogStats.messier || 0}, DSO20=${state.catalogStats.dsos20 || 0}`;
+        showToast(msg);
+      }
+
+      async function fetchText(url, timeoutMs = 4000) {
+        const response = await withTimeout(fetch(url), timeoutMs);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      }
+
+      function parseVizierTsv(text) {
+        const lines = text
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l && !l.startsWith("#"));
+        if (!lines.length) return null;
+        const headerIndex = lines.findIndex((l) => l.includes("Type") && (l.includes("Mag") || l.includes("Name")));
+        if (headerIndex < 0 || headerIndex + 1 >= lines.length) return null;
+        const headers = lines[headerIndex].split("\t").map(normalizeCell);
+        const rowLine = lines.slice(headerIndex + 1).find((l) => l.includes("\t"));
+        if (!rowLine) return null;
+        const values = rowLine.split("\t").map(normalizeCell);
+        const row = {};
+        headers.forEach((h, i) => {
+          row[h] = values[i] ?? "";
+        });
+        const magnitude = row.Mag || row.mag || row["Vmag"] || "--";
+        const size = row.Dim || row.dim || row["Dimensions"] || row["Diam"] || "--";
+        const type = row.Type || row.type || "--";
+        return { magnitude, size, type };
+      }
+
+      async function queryVizierByName(objectName) {
+        const q = encodeURIComponent(objectName);
+        const url =
+          `https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=VII/118/ngc2000` +
+          `&-c=${q}&-c.rs=8&-out=Name,Type,Mag,Diam`;
+        const text = await fetchText(url, 5000);
+        return parseVizierTsv(text);
+      }
+
+      async function fetchVizierDetails(obj) {
+        if (!obj || obj.type !== "dso") return null;
+        if (obj.mag || obj.dim || obj.sourceTypeCode || obj.designation) {
+          return {
+            magnitude: obj.mag ?? "--",
+            size: obj.dim ?? "--",
+            type: mapDsoType(obj.sourceTypeCode),
+            source: "Catalogue JSON offline"
+          };
+        }
+        const aliases = [obj.name];
+        if (messierToNgc[obj.name]) aliases.push(messierToNgc[obj.name]);
+        for (const alias of aliases) {
+          try {
+            const out = await queryVizierByName(alias);
+            if (out) return { ...out, source: `VizieR VII/118 (${alias})` };
+          } catch (_e) {
+            // try next alias
+          }
+        }
+        const fallback = localDsoFallback[obj.name];
+        if (fallback) return { ...fallback, source: "Catalogue local fallback" };
+        return null;
+      }
+
+      function updateObjectMetaPanel(obj, meta) {
+        if (!obj) {
+          dom.objectMeta.textContent = "Magnitude: -- | Taille: -- | Type: --";
+          dom.objectMetaSource.textContent = "Source: --";
+          return;
+        }
+        if (obj.type === "planet") {
+          dom.objectMeta.textContent = "Magnitude: dynamique | Taille: variable | Type: Planete/astre du systeme solaire";
+          dom.objectMetaSource.textContent = "Source: Astronomy.js ephemerides";
+          return;
+        }
+        dom.objectMeta.textContent =
+          `Magnitude: ${meta?.magnitude ?? "--"} | Taille: ${meta?.size ?? "--"} | Type: ${meta?.type ?? "--"}`;
+        dom.objectMetaSource.textContent = `Source: ${meta?.source ?? "indisponible"}`;
+      }
+
+      function initSkyMap() {
+        if (state.skyMapInitialized) return;
+        if (!window.Celestial || !dom.skyMap) {
+          dom.skyMapStatus.textContent = "D3-Celestial indisponible";
+          return;
+        }
+        try {
+          Celestial.display({
+            width: 420,
+            projection: "aitoff",
+            container: "#skyMap",
+            interactive: true,
+            controls: true,
+            form: false,
+            zoomlevel: 1,
+            stars: { show: true, limit: 6, style: { fill: "#fca5a5" } },
+            dsos: { show: true, limit: 6, names: false },
+            planets: { show: true, names: true, symbols: true },
+            constellations: { names: true, lines: true },
+            background: { fill: "#000000", stroke: "#220000", opacity: 1 }
+          });
+          state.skyMapInitialized = true;
+          dom.skyMapStatus.textContent = "Carte active (toucher pour naviguer)";
+        } catch (_e) {
+          dom.skyMapStatus.textContent = "Erreur initialisation carte";
+        }
+      }
+
+      function updateSkyMapForObject(obj) {
+        if (!obj || !state.skyMapInitialized || !window.Celestial) return;
+        if (!Number.isFinite(obj.ra) || !Number.isFinite(obj.dec)) return;
+        const raDegrees = obj.ra * 15;
+        try {
+          if (typeof Celestial.skyview === "function") {
+            Celestial.skyview({ date: new Date(), location: [raDegrees, obj.dec] });
+          }
+          if (typeof Celestial.redraw === "function") {
+            Celestial.redraw();
+          }
+          dom.skyMapStatus.textContent = `Centre: ${obj.name} (RA ${formatHms(obj.ra)} DEC ${formatDeg(obj.dec)})`;
+        } catch (_e) {
+          dom.skyMapStatus.textContent = `Selection: ${obj.name}`;
+        }
+      }
+
+      async function refreshSelectedObjectContext() {
+        const selected = state.cachedObjects.find((o) => o.name === state.selectedObjectName);
+        if (!selected) {
+          updateObjectMetaPanel(null, null);
+          return;
+        }
+        updateSkyMapForObject(selected);
+        const details = await fetchVizierDetails(selected);
+        state.selectedObjectMeta = details;
+        updateObjectMetaPanel(selected, details);
+      }
+
+      function getMoonPenalty(now, observer) {
+        try {
+          const moonEq = resolvePlanetEquatorial("Moon", now, observer);
+          const moonVis = computeVisibility(moonEq.ra, moonEq.dec, now, observer);
+          const illum = Astronomy.Illumination(Astronomy.Body.Moon, now);
+          const phase01 = clamp((illum.phase_angle ?? 180) / 180, 0, 1);
+          if (moonVis.altitude <= 0) return 0;
+          return clamp(Math.round((moonVis.altitude / 90) * 24 + phase01 * 16), 0, 40);
+        } catch (_e) {
+          return 0;
+        }
+      }
+
+      function getVisibilityScore({ objectKind, altitude, bortleIndex, moonPenalty }) {
+        const base = computeBaseAltitudeScore(altitude);
+        let score = base;
+        if (objectKind === "dso") {
+          // DSO are strongly impacted by sky glow and moonlight.
+          score -= (bortleIndex - 1) * 4;
+          score -= moonPenalty;
+        } else if (objectKind === "planet") {
+          // Planets are less sensitive to light pollution.
+          score -= Math.round((bortleIndex - 1) * 1.1);
+          score -= Math.round(moonPenalty * 0.2);
+        }
+        return clamp(Math.round(score), 0, 100);
+      }
+
+      function getObserverHemisphere() {
+        if (!state.observer || !Number.isFinite(state.observer.latitude)) return "unknown";
+        return state.observer.latitude >= 0 ? "north" : "south";
+      }
+
+      function shouldKeepByHemisphere(obj, hemisphere) {
+        if (hemisphere === "all" || hemisphere === "unknown") return true;
+        if (!Number.isFinite(obj.dec)) return true;
+        // Keep a small overlap around equator to avoid harsh cut.
+        if (hemisphere === "north") return obj.dec >= -10;
+        if (hemisphere === "south") return obj.dec <= 10;
+        return true;
+      }
+
+      function applyObjectFilters(list) {
+        const typeFilter = state.filters.type || "all";
+        const hemChoice = state.filters.hemisphere || "auto";
+        const effectiveHem = hemChoice === "auto" ? getObserverHemisphere() : hemChoice;
+        if (dom.filterHint) {
+          const hemLabel = effectiveHem === "unknown" ? "inconnu" : effectiveHem === "north" ? "Nord" : effectiveHem === "south" ? "Sud" : "Tous";
+          dom.filterHint.textContent = `Filtre actif: ${hemLabel}`;
+        }
+        return list.filter((obj) => {
+          if (typeFilter !== "all" && obj.type !== typeFilter) return false;
+          if (state.filters.visibleOnly && !obj.visible) return false;
+          if (!shouldKeepByHemisphere(obj, effectiveHem)) return false;
+          return true;
+        });
+      }
+
       function getComputedCatalog(now) {
         if (!state.observer) return [];
+        const bortleIndex = clamp(Number(state.config.bortleIndex) || 5, 1, 9);
+        const moonPenalty = getMoonPenalty(now, state.observer);
         return objectCatalog.map((obj) => {
           let ra = obj.ra;
           let dec = obj.dec;
@@ -405,15 +869,27 @@
             altitude: vis.altitude,
             azimuth: vis.azimuth,
             visible: vis.visible,
-            score: vis.visible ? Math.round(Math.min(100, (vis.altitude - 20) * 2.5 + 50)) : Math.max(0, Math.round(vis.altitude + 20))
+            score: getVisibilityScore({
+              objectKind: classifyObjectType(obj),
+              altitude: vis.altitude,
+              bortleIndex,
+              moonPenalty
+            })
           };
         });
       }
 
       function renderObjectList() {
         const selected = state.selectedObjectName;
-        const sorted = [...state.cachedObjects].sort((a, b) => b.score - a.score);
+        const sorted = applyObjectFilters([...state.cachedObjects]).sort((a, b) => b.score - a.score);
         dom.objectList.innerHTML = "";
+        if (!sorted.length) {
+          const empty = document.createElement("div");
+          empty.className = "text-xs text-red-400 p-2 rounded-lg bg-black/30 border border-red-900/60";
+          empty.textContent = "Aucun objet ne correspond aux filtres actifs.";
+          dom.objectList.appendChild(empty);
+          return;
+        }
         sorted.forEach((obj) => {
           const btn = document.createElement("button");
           const isSelected = selected === obj.name;
@@ -437,6 +913,7 @@
             state.selectedObjectName = obj.name;
             dom.selectedInfo.textContent = `${obj.name} selectionne`;
             renderObjectList();
+            refreshSelectedObjectContext();
           });
           dom.objectList.appendChild(btn);
         });
@@ -446,12 +923,13 @@
         await detectOnStepApi();
         const url = state.api.statusEndpoint;
         if (!url) {
-          dom.onstepState.textContent = "OnStepX: Hors ligne";
+          dom.onstepState.textContent =
+            state.api.profileDetected === "blocked" ? "OnStepX: Bloque (HTTPS/local)" : "OnStepX: Hors ligne";
           dom.onstepState.className = "text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50";
           return;
         }
         try {
-          const data = await fetchJson(url, {}, 2500);
+          const data = await fetchJson(url, { headers: buildApiHeaders() }, 2500);
           const m = normalizeMountData(data);
           const ra = Number.isFinite(m.ra) ? formatHms(m.ra) : "--:--:--";
           const dec = Number.isFinite(m.dec) ? formatDeg(m.dec) : "--:--:--";
@@ -486,6 +964,39 @@
         }
       }
 
+      function classifyAstroConditions(seeing, transparency) {
+        // 7Timer indices are usually 1..8 where larger values indicate better quality.
+        const s = Number(seeing);
+        const t = Number(transparency);
+        if (!Number.isFinite(s) || !Number.isFinite(t)) return "Conditions astro indisponibles";
+        if (s <= 3) return "Turbulence forte: Lune visible mais details planetaires mous";
+        if (s >= 6 && t >= 6) return "Bon ciel: Lune nette et details planetaires favorables";
+        if (t <= 3) return "Transparence faible: ciel voile, objets faibles defavorises";
+        return "Conditions moyennes: observation possible avec compromis";
+      }
+
+      async function updateAstroForecast7Timer() {
+        if (!state.observer) return;
+        const now = Date.now();
+        if (now - state.last7TimerFetch < 10 * 60 * 1000) return;
+        state.last7TimerFetch = now;
+        const { latitude, longitude } = state.observer;
+        const url =
+          `https://www.7timer.info/bin/astro.php?lon=${longitude.toFixed(4)}` +
+          `&lat=${latitude.toFixed(4)}&ac=0&unit=metric&output=json&tzshift=0`;
+        try {
+          const data = await fetchJson(url, {}, 4500);
+          const firstSlot = data?.dataseries?.[0];
+          const seeing = firstSlot?.seeing;
+          const transparency = firstSlot?.transparency;
+          const advice = classifyAstroConditions(seeing, transparency);
+          dom.astroForecast.textContent =
+            `Astro seeing/transparence: ${seeing ?? "--"}/8 | ${transparency ?? "--"}/8 - ${advice}`;
+        } catch (_e) {
+          dom.astroForecast.textContent = "Astro seeing/transparence: indisponible (7Timer)";
+        }
+      }
+
       async function gotoSelectedObject() {
         const selected = state.cachedObjects.find((o) => o.name === state.selectedObjectName);
         if (!selected || !Number.isFinite(selected.ra) || !Number.isFinite(selected.dec)) {
@@ -495,7 +1006,7 @@
         try {
           await detectOnStepApi();
           const endpoint = await postWithFallback("goto", gotoPayloadVariants(selected));
-          showToast(`GoTo envoye vers ${selected.name} (${endpoint.replace(getOnStepBaseUrl(), "")})`);
+          showToast(`GoTo envoye vers ${selected.name} (${endpoint.replace(getApiBaseUrl(), "")})`);
         } catch (_e) {
           showToast("Echec GoTo (endpoint/payload incompatible)", "error");
         }
@@ -505,7 +1016,7 @@
         try {
           await detectOnStepApi();
           const endpoint = await postWithFallback("abort", [{}, { action: "abort" }, { cmd: "abort" }]);
-          showToast(`ABORT envoye (${endpoint.replace(getOnStepBaseUrl(), "")})`);
+          showToast(`ABORT envoye (${endpoint.replace(getApiBaseUrl(), "")})`);
         } catch (_e) {
           showToast("Echec ABORT", "error");
         }
@@ -524,6 +1035,7 @@
         if (!state.observer) return;
         state.cachedObjects = getComputedCatalog(new Date());
         renderObjectList();
+        refreshSelectedObjectContext();
       }
 
       function updateGpsPanel() {
@@ -551,6 +1063,7 @@
             updateGpsPanel();
             refreshAstroObjects();
             updateWeather();
+            updateAstroForecast7Timer();
           },
           () => showToast("GPS refuse ou indisponible", "error"),
           { enableHighAccuracy: true, maximumAge: 60000, timeout: 5000 }
@@ -572,7 +1085,11 @@
           vibrate();
           state.config.onstepIp = (dom.onstepIp.value || "").trim() || "192.168.0.1";
           state.config.weatherKey = (dom.weatherKey.value || "").trim();
+          state.config.proxyBaseUrl = normalizeBaseUrl(dom.proxyBaseUrl.value);
+          state.config.proxyApiToken = (dom.proxyApiToken.value || "").trim();
+          state.config.bortleIndex = clamp(Number(dom.bortleIndex.value) || 5, 1, 9);
           state.config.fwProfile = dom.fwProfile.value || "auto";
+          state.networkNoticeShown = false;
           state.api.statusEndpoint = null;
           state.api.gotoEndpoint = null;
           state.api.abortEndpoint = null;
@@ -598,6 +1115,18 @@
             nudge(btn.dataset.dir);
           });
         });
+        dom.filterType.addEventListener("change", () => {
+          state.filters.type = dom.filterType.value || "all";
+          renderObjectList();
+        });
+        dom.filterHemisphere.addEventListener("change", () => {
+          state.filters.hemisphere = dom.filterHemisphere.value || "auto";
+          renderObjectList();
+        });
+        dom.filterVisibleOnly.addEventListener("change", () => {
+          state.filters.visibleOnly = Boolean(dom.filterVisibleOnly.checked);
+          renderObjectList();
+        });
       }
 
       function startLoop() {
@@ -606,6 +1135,7 @@
           updateGpsPanel();
           refreshAstroObjects();
           updateWeather();
+          updateAstroForecast7Timer();
         }, 1500);
       }
 
@@ -613,6 +1143,9 @@
         loadConfig();
         applyConfigUI();
         bindEvents();
+        ensureNetworkModeNotice();
+        initSkyMap();
+        loadOfflineCatalogs().then(() => refreshAstroObjects());
         initGeolocation();
         updateOnStepStatus();
         refreshAstroObjects();
