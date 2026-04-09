@@ -2,23 +2,32 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Astro Control Center</title>
     <link rel="stylesheet" href="./css/tailwind.local.css" />
+    <!--<link rel="stylesheet" href="./aladin.min.css" />-->
     <script src="./astronomy.browser.min.js"></script>
-    <script src="./d3.v7.min.js"></script>
-    <script src="./celestial.min.js"></script>
+    <script src="./aladin.js"></script>
     <style>
       :root {
         color-scheme: dark;
       }
       body {
-        background: radial-gradient(1200px 800px at 50% -20%, #220000 0%, #060606 40%, #000 100%);
+        background: radial-gradient(
+          1200px 800px at 50% -20%,
+          #220000 0%,
+          #060606 40%,
+          #000 100%
+        );
       }
       .night-panel {
         background: rgba(20, 3, 3, 0.84);
         border: 1px solid rgba(190, 20, 20, 0.35);
-        box-shadow: 0 0 0 1px rgba(80, 0, 0, 0.3) inset, 0 0 18px rgba(100, 0, 0, 0.18);
+        box-shadow:
+          0 0 0 1px rgba(80, 0, 0, 0.3) inset,
+          0 0 18px rgba(100, 0, 0, 0.18);
       }
       .night-btn {
         background: linear-gradient(180deg, #3c0707 0%, #210404 100%);
@@ -30,7 +39,7 @@
       .toast {
         animation: fadeInOut 2.4s ease both;
       }
-      #skyMap .celestial-map {
+      #skyMap {
         touch-action: manipulation;
       }
       @keyframes fadeInOut {
@@ -54,8 +63,14 @@
     <main class="max-w-md mx-auto px-3 py-3 pb-24 space-y-3">
       <section class="night-panel rounded-2xl p-3">
         <div class="flex items-center justify-between mb-2">
-          <h1 class="text-lg font-semibold tracking-wide text-red-300">Astro Control Center</h1>
-          <span id="onstepState" class="text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50">OnStepX: ?</span>
+          <h1 class="text-lg font-semibold tracking-wide text-red-300">
+            Astro Control Center
+          </h1>
+          <span
+            id="onstepState"
+            class="text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50"
+            >OnStepX: ?</span
+          >
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-sm">
@@ -80,39 +95,56 @@
         <div class="mt-2 p-2 rounded-lg bg-black/30 text-sm">
           <p class="text-red-400 text-xs mb-1">Météo locale</p>
           <p id="weather">Temp: -- | Nuages: -- | Humidité: --</p>
-          <p id="astroForecast" class="text-xs text-red-300 mt-1">Astro seeing/transparence: -- / --</p>
+          <p id="astroForecast" class="text-xs text-red-300 mt-1">
+            Astro seeing/transparence: -- / --
+          </p>
         </div>
       </section>
 
       <section class="night-panel rounded-2xl p-3">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-semibold text-red-300">Recommandations objets</h2>
-          <span id="selectedInfo" class="text-xs text-red-400">Aucun objet sélectionné</span>
+          <span id="selectedInfo" class="text-xs text-red-400"
+            >Aucun objet sélectionné</span
+          >
         </div>
         <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
-          <select id="filterType" class="p-2 rounded-lg bg-black/40 border border-red-900/70">
+          <select
+            id="filterType"
+            class="p-2 rounded-lg bg-black/40 border border-red-900/70">
             <option value="all">Type: Tous</option>
             <option value="dso">Type: DSO</option>
             <option value="planet">Type: Planetes/Lune</option>
           </select>
-          <select id="filterHemisphere" class="p-2 rounded-lg bg-black/40 border border-red-900/70">
+          <select
+            id="filterHemisphere"
+            class="p-2 rounded-lg bg-black/40 border border-red-900/70">
             <option value="auto">Hemisphere: Auto GPS</option>
             <option value="north">Hemisphere: Nord</option>
             <option value="south">Hemisphere: Sud</option>
             <option value="all">Hemisphere: Tous</option>
           </select>
         </div>
-        <div class="flex items-center justify-between mb-2 text-xs text-red-300">
+        <div
+          class="flex items-center justify-between mb-2 text-xs text-red-300">
           <label class="flex items-center gap-2">
-            <input id="filterVisibleOnly" type="checkbox" class="accent-red-500" checked />
+            <input
+              id="filterVisibleOnly"
+              type="checkbox"
+              class="accent-red-500"
+              checked />
             <span>Visibles uniquement (alt &gt; 20°)</span>
           </label>
           <span id="filterHint" class="text-red-400">Auto</span>
         </div>
-        <div id="objectList" class="space-y-2 max-h-56 overflow-auto pr-1"></div>
+        <div
+          id="objectList"
+          class="space-y-2 max-h-56 overflow-auto pr-1"></div>
         <div class="mt-3 p-2 rounded-lg bg-black/30 text-xs">
           <p class="text-red-400">Fiche objet (VizieR)</p>
-          <p id="objectMeta" class="mt-1 text-red-200">Magnitude: -- | Taille: -- | Type: --</p>
+          <p id="objectMeta" class="mt-1 text-red-200">
+            Magnitude: -- | Taille: -- | Type: --
+          </p>
           <p id="objectMetaSource" class="mt-1 text-red-400">Source: --</p>
         </div>
       </section>
@@ -120,89 +152,188 @@
       <section class="night-panel rounded-2xl p-3">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-semibold text-red-300">Carte du ciel tactile</h2>
-          <span id="skyMapStatus" class="text-xs text-red-400">En attente...</span>
+          <span id="skyMapStatus" class="text-xs text-red-400"
+            >En attente...</span
+          >
         </div>
-        <div id="skyMap" class="rounded-lg overflow-hidden border border-red-900/70 min-h-[220px] bg-black/30"></div>
+        <div
+          id="skyMap"
+          class="rounded-lg overflow-hidden border border-red-900/70 min-h-[220px] bg-black/30"></div>
       </section>
 
       <section class="night-panel rounded-2xl p-3">
         <h2 class="font-semibold text-red-300 mb-3">Contrôles tactiques</h2>
 
         <div class="grid grid-cols-2 gap-2 mb-3">
-          <button id="gotoBtn" class="night-btn rounded-xl py-3 text-lg font-bold text-red-100">GoTo</button>
-          <button id="abortBtn" class="rounded-xl py-3 text-lg font-bold bg-red-700 text-white border border-red-400">ABORT</button>
+          <button
+            id="gotoBtn"
+            class="night-btn rounded-xl py-3 text-lg font-bold text-red-100">
+            GoTo
+          </button>
+          <button
+            id="abortBtn"
+            class="rounded-xl py-3 text-lg font-bold bg-red-700 text-white border border-red-400">
+            ABORT
+          </button>
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-center">
           <div></div>
-          <button data-dir="N" class="dir-btn night-btn rounded-xl py-3 font-semibold">N</button>
+          <button
+            data-dir="N"
+            class="dir-btn night-btn rounded-xl py-3 font-semibold">
+            N
+          </button>
           <div></div>
-          <button data-dir="W" class="dir-btn night-btn rounded-xl py-3 font-semibold">W</button>
-          <button data-dir="S" class="dir-btn night-btn rounded-xl py-3 font-semibold">S</button>
-          <button data-dir="E" class="dir-btn night-btn rounded-xl py-3 font-semibold">E</button>
+          <button
+            data-dir="W"
+            class="dir-btn night-btn rounded-xl py-3 font-semibold">
+            W
+          </button>
+          <button
+            data-dir="S"
+            class="dir-btn night-btn rounded-xl py-3 font-semibold">
+            S
+          </button>
+          <button
+            data-dir="E"
+            class="dir-btn night-btn rounded-xl py-3 font-semibold">
+            E
+          </button>
         </div>
       </section>
     </main>
 
     <footer class="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-3 pb-3">
-      <button id="openConfig" class="w-full night-btn rounded-xl py-2 text-sm">Configuration OnStepX / Météo</button>
+      <button id="openConfig" class="w-full night-btn rounded-xl py-2 text-sm">
+        Configuration OnStepX / Météo
+      </button>
     </footer>
 
-    <div id="configModal" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-3">
+    <div
+      id="configModal"
+      class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-3">
       <div class="night-panel rounded-2xl p-3 w-full max-w-md">
         <h3 class="font-semibold text-red-300 mb-2">Configuration</h3>
-        <label class="block text-xs text-red-400 mb-1" for="onstepIp">IP OnStepX</label>
-        <input id="onstepIp" class="w-full mb-2 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="192.168.0.1" />
-        <label class="block text-xs text-red-400 mb-1" for="weatherKey">OpenWeatherMap API Key</label>
-        <input id="weatherKey" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="api-key..." />
-        <label class="block text-xs text-red-400 mb-1" for="proxyBaseUrl">Proxy API URL (optionnel)</label>
-        <input id="proxyBaseUrl" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="https://ton-proxy.exemple.com" />
-        <label class="block text-xs text-red-400 mb-1" for="proxyApiToken">Proxy API Token (optionnel)</label>
-        <input id="proxyApiToken" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="token-bearer..." />
-        <label class="block text-xs text-red-400 mb-1" for="bortleIndex">Indice Bortle (1-9)</label>
-        <input id="bortleIndex" type="number" min="1" max="9" step="1" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500" placeholder="5" />
-        <label class="block text-xs text-red-400 mb-1" for="fwProfile">Profil firmware</label>
-        <select id="fwProfile" class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500">
+        <label class="block text-xs text-red-400 mb-1" for="onstepIp"
+          >IP OnStepX</label
+        >
+        <input
+          id="onstepIp"
+          class="w-full mb-2 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500"
+          placeholder="192.168.0.1" />
+        <label class="block text-xs text-red-400 mb-1" for="weatherKey"
+          >OpenWeatherMap API Key</label
+        >
+        <input
+          id="weatherKey"
+          class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500"
+          placeholder="api-key..." />
+        <label class="block text-xs text-red-400 mb-1" for="proxyBaseUrl"
+          >Proxy API URL (optionnel)</label
+        >
+        <input
+          id="proxyBaseUrl"
+          class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500"
+          placeholder="https://ton-proxy.exemple.com" />
+        <label class="block text-xs text-red-400 mb-1" for="proxyApiToken"
+          >Proxy API Token (optionnel)</label
+        >
+        <input
+          id="proxyApiToken"
+          class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500"
+          placeholder="token-bearer..." />
+        <label class="block text-xs text-red-400 mb-1" for="bortleIndex"
+          >Indice Bortle (1-9)</label
+        >
+        <input
+          id="bortleIndex"
+          type="number"
+          min="1"
+          max="9"
+          step="1"
+          class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500"
+          placeholder="5" />
+        <label class="block text-xs text-red-400 mb-1" for="fwProfile"
+          >Profil firmware</label
+        >
+        <select
+          id="fwProfile"
+          class="w-full mb-3 p-2 rounded-lg bg-black/40 border border-red-800/70 focus:outline-none focus:ring-1 focus:ring-red-500">
           <option value="auto">Auto-detect</option>
           <option value="native-v1">Native API v1</option>
           <option value="legacy-rest">Legacy REST</option>
         </select>
 
         <div class="flex gap-2">
-          <button id="saveConfig" class="flex-1 night-btn rounded-lg py-2">Enregistrer</button>
-          <button id="closeConfig" class="flex-1 rounded-lg py-2 bg-zinc-900 border border-zinc-700">Fermer</button>
+          <button id="saveConfig" class="flex-1 night-btn rounded-lg py-2">
+            Enregistrer
+          </button>
+          <button
+            id="closeConfig"
+            class="flex-1 rounded-lg py-2 bg-zinc-900 border border-zinc-700">
+            Fermer
+          </button>
         </div>
       </div>
     </div>
 
-    <div id="toastArea" class="fixed bottom-20 left-0 right-0 flex flex-col items-center gap-2 px-3 pointer-events-none"></div>
+    <div
+      id="toastArea"
+      class="fixed bottom-20 left-0 right-0 flex flex-col items-center gap-2 px-3 pointer-events-none"></div>
 
     <script>
       const STORAGE_KEY = "astro-control-center-config";
       const seedDsoCatalog = [
-        { name: "M31", type: "dso", ra: 0.712, dec: 41.269, label: "Galaxie d'Andromede" },
-        { name: "M42", type: "dso", ra: 5.588, dec: -5.391, label: "Nebuleuse d'Orion" },
+        {
+          name: "M31",
+          type: "dso",
+          ra: 0.712,
+          dec: 41.269,
+          label: "Galaxie d'Andromede",
+        },
+        {
+          name: "M42",
+          type: "dso",
+          ra: 5.588,
+          dec: -5.391,
+          label: "Nebuleuse d'Orion",
+        },
         { name: "M45", type: "dso", ra: 3.792, dec: 24.117, label: "Pleiades" },
-        { name: "M51", type: "dso", ra: 13.497, dec: 47.195, label: "Galaxie du Tourbillon" }
+        {
+          name: "M51",
+          type: "dso",
+          ra: 13.497,
+          dec: 47.195,
+          label: "Galaxie du Tourbillon",
+        },
       ];
       const planetCatalog = [
         { name: "Jupiter", type: "planet", body: "Jupiter" },
         { name: "Saturne", type: "planet", body: "Saturn" },
         { name: "Mars", type: "planet", body: "Mars" },
-        { name: "Lune", type: "planet", body: "Moon" }
+        { name: "Lune", type: "planet", body: "Moon" },
       ];
       let objectCatalog = [...seedDsoCatalog, ...planetCatalog];
       const localDsoFallback = {
-        M31: { magnitude: "3.4", size: "190x60 arcmin", type: "Galaxie spirale" },
-        M42: { magnitude: "4.0", size: "85x60 arcmin", type: "Nebuleuse diffuse" },
+        M31: {
+          magnitude: "3.4",
+          size: "190x60 arcmin",
+          type: "Galaxie spirale",
+        },
+        M42: {
+          magnitude: "4.0",
+          size: "85x60 arcmin",
+          type: "Nebuleuse diffuse",
+        },
         M45: { magnitude: "1.6", size: "110 arcmin", type: "Amas ouvert" },
-        M51: { magnitude: "8.4", size: "11x7 arcmin", type: "Galaxie spirale" }
+        M51: { magnitude: "8.4", size: "11x7 arcmin", type: "Galaxie spirale" },
       };
       const messierToNgc = {
         M31: "NGC 224",
         M42: "NGC 1976",
         M45: "NGC 1432",
-        M51: "NGC 5194"
+        M51: "NGC 5194",
       };
 
       const state = {
@@ -212,21 +343,28 @@
           fwProfile: "auto",
           proxyBaseUrl: "",
           proxyApiToken: "",
-          bortleIndex: 5
+          bortleIndex: 5,
         },
         observer: null,
         selectedObjectName: null,
         selectedObjectMeta: null,
         cachedObjects: [],
-        catalogStats: { messier: 0, dsos20: 0, constellations: 0, planetsJson: 0 },
+        catalogStats: {
+          messier: 0,
+          dsos20: 0,
+          constellations: 0,
+          planetsJson: 0,
+        },
         lastWeatherFetch: 0,
         last7TimerFetch: 0,
         networkNoticeShown: false,
         skyMapInitialized: false,
+        aladinInstance: null,
+        aladinOverlay: null,
         filters: {
           type: "all",
           hemisphere: "auto",
-          visibleOnly: true
+          visibleOnly: true,
         },
         api: {
           statusEndpoint: null,
@@ -234,8 +372,8 @@
           abortEndpoint: null,
           slewEndpoint: null,
           profileDetected: null,
-          lastDetectAt: 0
-        }
+          lastDetectAt: 0,
+        },
       };
 
       const dom = {
@@ -268,11 +406,14 @@
         proxyApiToken: document.getElementById("proxyApiToken"),
         bortleIndex: document.getElementById("bortleIndex"),
         fwProfile: document.getElementById("fwProfile"),
-        toastArea: document.getElementById("toastArea")
+        toastArea: document.getElementById("toastArea"),
       };
 
       function vibrate(ms = 50) {
-        if (window.navigator && typeof window.navigator.vibrate === "function") {
+        if (
+          window.navigator &&
+          typeof window.navigator.vibrate === "function"
+        ) {
           window.navigator.vibrate(ms);
         }
       }
@@ -341,12 +482,17 @@
         const direct = getOnStepBaseUrl();
         const pageIsHttps = window.location.protocol === "https:";
         const host = state.config.onstepIp || "192.168.0.1";
-        return pageIsHttps && direct.startsWith("http://") && isPrivateIpv4(host);
+        return (
+          pageIsHttps && direct.startsWith("http://") && isPrivateIpv4(host)
+        );
       }
 
       function ensureNetworkModeNotice() {
         if (state.networkNoticeShown) return;
-        if (!state.config.proxyBaseUrl && isBrowserLikelyToBlockDirectLocalHttp()) {
+        if (
+          !state.config.proxyBaseUrl &&
+          isBrowserLikelyToBlockDirectLocalHttp()
+        ) {
           showToast("HTTPS + IP locale: configure un Proxy API URL", "error");
           state.networkNoticeShown = true;
         }
@@ -354,7 +500,7 @@
 
       function withTimeout(promise, timeoutMs = 2800) {
         const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), timeoutMs)
+          setTimeout(() => reject(new Error("timeout")), timeoutMs),
         );
         return Promise.race([promise, timeout]);
       }
@@ -369,10 +515,13 @@
         const response = await withTimeout(
           fetch(url, {
             method: "POST",
-            headers: { ...buildApiHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            headers: {
+              ...buildApiHeaders(),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
           }),
-          timeoutMs
+          timeoutMs,
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response;
@@ -396,7 +545,7 @@
         let hours = ((hoursFloat % 24) + 24) % 24;
         const h = Math.floor(hours);
         const m = Math.floor((hours - h) * 60);
-        const s = Math.floor((((hours - h) * 60) - m) * 60);
+        const s = Math.floor(((hours - h) * 60 - m) * 60);
         return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
       }
 
@@ -406,12 +555,24 @@
 
       function normalizeMountData(data) {
         const raDeg = data?.raDeg ?? data?.mount?.raDeg ?? data?.coords?.raDeg;
-        const decDeg = data?.decDeg ?? data?.mount?.decDeg ?? data?.coords?.decDeg;
+        const decDeg =
+          data?.decDeg ?? data?.mount?.decDeg ?? data?.coords?.decDeg;
         const raHours = Number.isFinite(raDeg) ? raDeg / 15 : undefined;
         return {
-          ra: data?.ra ?? data?.mount?.ra ?? data?.coords?.ra ?? data?.equatorial?.ra ?? raHours,
-          dec: data?.dec ?? data?.mount?.dec ?? data?.coords?.dec ?? data?.equatorial?.dec ?? decDeg,
-          battery: data?.battery?.voltage ?? data?.voltage ?? data?.power?.voltage
+          ra:
+            data?.ra ??
+            data?.mount?.ra ??
+            data?.coords?.ra ??
+            data?.equatorial?.ra ??
+            raHours,
+          dec:
+            data?.dec ??
+            data?.mount?.dec ??
+            data?.coords?.dec ??
+            data?.equatorial?.dec ??
+            decDeg,
+          battery:
+            data?.battery?.voltage ?? data?.voltage ?? data?.power?.voltage,
         };
       }
 
@@ -419,8 +580,13 @@
         const base = getApiBaseUrl();
         const profile = state.config.fwProfile || "auto";
         if (profile === "native-v1") return [`${base}/api/v1/status`];
-        if (profile === "legacy-rest") return [`${base}/status`, `${base}/api/status`];
-        return [`${base}/api/v1/status`, `${base}/status`, `${base}/api/status`];
+        if (profile === "legacy-rest")
+          return [`${base}/status`, `${base}/api/status`];
+        return [
+          `${base}/api/v1/status`,
+          `${base}/status`,
+          `${base}/api/status`,
+        ];
       }
 
       function getCommandCandidates(type) {
@@ -430,42 +596,64 @@
           goto: {
             "native-v1": [`${base}/api/v1/goto`],
             "legacy-rest": [`${base}/goto`, `${base}/api/goto`],
-            auto: [`${base}/api/v1/goto`, `${base}/goto`, `${base}/api/goto`]
+            auto: [`${base}/api/v1/goto`, `${base}/goto`, `${base}/api/goto`],
           },
           abort: {
             "native-v1": [`${base}/api/v1/abort`],
             "legacy-rest": [`${base}/abort`, `${base}/api/abort`],
-            auto: [`${base}/api/v1/abort`, `${base}/abort`, `${base}/api/abort`]
+            auto: [
+              `${base}/api/v1/abort`,
+              `${base}/abort`,
+              `${base}/api/abort`,
+            ],
           },
           slew: {
             "native-v1": [`${base}/api/v1/slew`],
             "legacy-rest": [`${base}/slew`, `${base}/api/slew`],
-            auto: [`${base}/api/v1/slew`, `${base}/slew`, `${base}/api/slew`]
-          }
+            auto: [`${base}/api/v1/slew`, `${base}/slew`, `${base}/api/slew`],
+          },
         };
         return map[type][profile] || map[type].auto;
       }
 
       async function detectOnStepApi(force = false) {
         ensureNetworkModeNotice();
-        if (!state.config.proxyBaseUrl && isBrowserLikelyToBlockDirectLocalHttp()) {
+        if (
+          !state.config.proxyBaseUrl &&
+          isBrowserLikelyToBlockDirectLocalHttp()
+        ) {
           state.api.statusEndpoint = null;
           state.api.profileDetected = "blocked";
           state.api.lastDetectAt = Date.now();
           return;
         }
-        if (!force && Date.now() - state.api.lastDetectAt < 20000 && state.api.statusEndpoint) {
+        if (
+          !force &&
+          Date.now() - state.api.lastDetectAt < 20000 &&
+          state.api.statusEndpoint
+        ) {
           return;
         }
         const candidates = getStatusCandidates();
         for (const url of candidates) {
           try {
-            const data = await fetchJson(url, { headers: buildApiHeaders() }, 2200);
+            const data = await fetchJson(
+              url,
+              { headers: buildApiHeaders() },
+              2200,
+            );
             state.api.statusEndpoint = url;
-            state.api.profileDetected = url.includes("/api/v1/") ? "native-v1" : "legacy-rest";
+            state.api.profileDetected = url.includes("/api/v1/")
+              ? "native-v1"
+              : "legacy-rest";
             state.api.lastDetectAt = Date.now();
             const m = normalizeMountData(data);
-            if (Number.isFinite(m.ra) || Number.isFinite(m.dec) || Number.isFinite(m.battery)) return;
+            if (
+              Number.isFinite(m.ra) ||
+              Number.isFinite(m.dec) ||
+              Number.isFinite(m.battery)
+            )
+              return;
           } catch (_e) {
             // try next
           }
@@ -477,9 +665,23 @@
 
       function gotoPayloadVariants(selected) {
         return [
-          { ra: selected.ra, dec: selected.dec, name: selected.name, epoch: "J2000" },
-          { raHours: selected.ra, decDeg: selected.dec, target: selected.name, frame: "J2000" },
-          { ra: formatHms(selected.ra), dec: selected.dec.toFixed(4), object: selected.name }
+          {
+            ra: selected.ra,
+            dec: selected.dec,
+            name: selected.name,
+            epoch: "J2000",
+          },
+          {
+            raHours: selected.ra,
+            decDeg: selected.dec,
+            target: selected.name,
+            frame: "J2000",
+          },
+          {
+            ra: formatHms(selected.ra),
+            dec: selected.dec.toFixed(4),
+            object: selected.name,
+          },
         ];
       }
 
@@ -487,14 +689,16 @@
         return [
           { direction, rate: "guide", action: "pulse", durationMs: 400 },
           { dir: direction, speed: "guide", ms: 400 },
-          { axis: direction, mode: "slew", duration: 400 }
+          { axis: direction, mode: "slew", duration: 400 },
         ];
       }
 
       async function postWithFallback(type, payloadVariants) {
         const endpointCacheKey = `${type}Endpoint`;
         const cached = state.api[endpointCacheKey];
-        const endpointCandidates = cached ? [cached, ...getCommandCandidates(type)] : getCommandCandidates(type);
+        const endpointCandidates = cached
+          ? [cached, ...getCommandCandidates(type)]
+          : getCommandCandidates(type);
         const uniqueEndpoints = [...new Set(endpointCandidates)];
         for (const endpoint of uniqueEndpoints) {
           for (const payload of payloadVariants) {
@@ -512,7 +716,7 @@
 
       function computeLST(now, lonDeg) {
         const gst = Astronomy.SiderealTime(now);
-        const lst = ((gst + lonDeg / 15) % 24 + 24) % 24;
+        const lst = (((gst + lonDeg / 15) % 24) + 24) % 24;
         return formatHms(lst);
       }
 
@@ -524,7 +728,11 @@
 
       function computeVisibility(ra, dec, now, observer) {
         const hor = Astronomy.Horizon(now, observer, ra, dec, "normal");
-        return { altitude: hor.altitude, azimuth: hor.azimuth, visible: hor.altitude > 20 };
+        return {
+          altitude: hor.altitude,
+          azimuth: hor.azimuth,
+          visible: hor.altitude > 20,
+        };
       }
 
       function clamp(value, min, max) {
@@ -533,7 +741,8 @@
 
       function computeBaseAltitudeScore(altitude) {
         if (!Number.isFinite(altitude)) return 0;
-        if (altitude > 20) return Math.round(Math.min(100, (altitude - 20) * 2.5 + 50));
+        if (altitude > 20)
+          return Math.round(Math.min(100, (altitude - 20) * 2.5 + 50));
         return Math.max(0, Math.round(altitude + 20));
       }
 
@@ -544,7 +753,9 @@
       }
 
       function normalizeCell(v) {
-        return String(v ?? "").replace(/"/g, "").trim();
+        return String(v ?? "")
+          .replace(/"/g, "")
+          .trim();
       }
 
       function raDegToHours(raDeg) {
@@ -564,7 +775,7 @@
           rn: "Nebuleuse reflexion",
           snr: "Remnant supernova",
           sfr: "Region HII",
-          pos: "Asterisme/position"
+          pos: "Asterisme/position",
         };
         return m[key] || key || "dso";
       }
@@ -587,7 +798,7 @@
           sourceTypeCode: props.type || "",
           mag: props.mag,
           dim: props.dim,
-          designation: props.desig || ""
+          designation: props.desig || "",
         };
       }
 
@@ -611,28 +822,38 @@
       }
 
       async function loadOfflineCatalogs() {
-        const [messier, dsos20, planetsJson, constellations] = await Promise.all([
-          loadJsonSafe("./messier.json"),
-          loadJsonSafe("./dsos.20.json"),
-          loadJsonSafe("./planets.json"),
-          loadJsonSafe("./constellations.json")
-        ]);
+        const [messier, dsos20, planetsJson, constellations] =
+          await Promise.all([
+            loadJsonSafe("./messier.json"),
+            loadJsonSafe("./dsos.20.json"),
+            loadJsonSafe("./planets.json"),
+            loadJsonSafe("./constellations.json"),
+          ]);
 
         const imported = [];
         if (Array.isArray(messier?.features)) {
-          const list = messier.features.map(convertGeoFeatureToDso).filter(Boolean);
+          const list = messier.features
+            .map(convertGeoFeatureToDso)
+            .filter(Boolean);
           state.catalogStats.messier = list.length;
           imported.push(...list);
         }
         if (Array.isArray(dsos20?.features)) {
-          const list = dsos20.features.map(convertGeoFeatureToDso).filter(Boolean);
+          const list = dsos20.features
+            .map(convertGeoFeatureToDso)
+            .filter(Boolean);
           state.catalogStats.dsos20 = list.length;
           imported.push(...list);
         }
 
         if (planetsJson && typeof planetsJson === "object") {
           state.catalogStats.planetsJson = Object.keys(planetsJson).length;
-          const keyByBody = { Jupiter: "jup", Saturn: "sat", Mars: "mar", Moon: "lun" };
+          const keyByBody = {
+            Jupiter: "jup",
+            Saturn: "sat",
+            Mars: "mar",
+            Moon: "lun",
+          };
           planetCatalog.forEach((p) => {
             const k = keyByBody[p.body];
             const meta = planetsJson[k];
@@ -642,11 +863,15 @@
 
         if (Array.isArray(constellations?.features)) {
           state.catalogStats.constellations = constellations.features.length;
-          dom.skyMapStatus.textContent = `Carte active | ${state.catalogStats.constellations} constellations chargees`;
+          if (!state.skyMapInitialized) {
+            dom.skyMapStatus.textContent = `Catalogue charge | ${state.catalogStats.constellations} constellations`;
+          }
         }
 
         const fallbackDsos = seedDsoCatalog.map((o) => ({ ...o }));
-        const dsoCatalog = dedupeByName(imported.length ? imported : fallbackDsos);
+        const dsoCatalog = dedupeByName(
+          imported.length ? imported : fallbackDsos,
+        );
         objectCatalog = [...dsoCatalog, ...planetCatalog];
         const msg = `Catalogues offline: M=${state.catalogStats.messier || 0}, DSO20=${state.catalogStats.dsos20 || 0}`;
         showToast(msg);
@@ -664,10 +889,15 @@
           .map((l) => l.trim())
           .filter((l) => l && !l.startsWith("#"));
         if (!lines.length) return null;
-        const headerIndex = lines.findIndex((l) => l.includes("Type") && (l.includes("Mag") || l.includes("Name")));
+        const headerIndex = lines.findIndex(
+          (l) =>
+            l.includes("Type") && (l.includes("Mag") || l.includes("Name")),
+        );
         if (headerIndex < 0 || headerIndex + 1 >= lines.length) return null;
         const headers = lines[headerIndex].split("\t").map(normalizeCell);
-        const rowLine = lines.slice(headerIndex + 1).find((l) => l.includes("\t"));
+        const rowLine = lines
+          .slice(headerIndex + 1)
+          .find((l) => l.includes("\t"));
         if (!rowLine) return null;
         const values = rowLine.split("\t").map(normalizeCell);
         const row = {};
@@ -675,7 +905,8 @@
           row[h] = values[i] ?? "";
         });
         const magnitude = row.Mag || row.mag || row["Vmag"] || "--";
-        const size = row.Dim || row.dim || row["Dimensions"] || row["Diam"] || "--";
+        const size =
+          row.Dim || row.dim || row["Dimensions"] || row["Diam"] || "--";
         const type = row.Type || row.type || "--";
         return { magnitude, size, type };
       }
@@ -696,7 +927,7 @@
             magnitude: obj.mag ?? "--",
             size: obj.dim ?? "--",
             type: mapDsoType(obj.sourceTypeCode),
-            source: "Catalogue JSON offline"
+            source: "Catalogue JSON offline",
           };
         }
         const aliases = [obj.name];
@@ -710,7 +941,8 @@
           }
         }
         const fallback = localDsoFallback[obj.name];
-        if (fallback) return { ...fallback, source: "Catalogue local fallback" };
+        if (fallback)
+          return { ...fallback, source: "Catalogue local fallback" };
         return null;
       }
 
@@ -721,53 +953,66 @@
           return;
         }
         if (obj.type === "planet") {
-          dom.objectMeta.textContent = "Magnitude: dynamique | Taille: variable | Type: Planete/astre du systeme solaire";
+          dom.objectMeta.textContent =
+            "Magnitude: dynamique | Taille: variable | Type: Planete/astre du systeme solaire";
           dom.objectMetaSource.textContent = "Source: Astronomy.js ephemerides";
           return;
         }
-        dom.objectMeta.textContent =
-          `Magnitude: ${meta?.magnitude ?? "--"} | Taille: ${meta?.size ?? "--"} | Type: ${meta?.type ?? "--"}`;
+        dom.objectMeta.textContent = `Magnitude: ${meta?.magnitude ?? "--"} | Taille: ${meta?.size ?? "--"} | Type: ${meta?.type ?? "--"}`;
         dom.objectMetaSource.textContent = `Source: ${meta?.source ?? "indisponible"}`;
       }
 
       function initSkyMap() {
         if (state.skyMapInitialized) return;
-        if (!window.Celestial || !dom.skyMap) {
-          dom.skyMapStatus.textContent = "D3-Celestial indisponible";
+        if (!window.A || !dom.skyMap) {
+          dom.skyMapStatus.textContent = "Aladin Lite indisponible";
           return;
         }
         try {
-          Celestial.display({
-            width: 420,
-            projection: "aitoff",
-            container: "#skyMap",
-            interactive: true,
-            controls: true,
-            form: false,
-            zoomlevel: 1,
-            stars: { show: true, limit: 6, style: { fill: "#fca5a5" } },
-            dsos: { show: true, limit: 6, names: false },
-            planets: { show: true, names: true, symbols: true },
-            constellations: { names: true, lines: true },
-            background: { fill: "#000000", stroke: "#220000", opacity: 1 }
+          dom.skyMap.innerHTML = "";
+          state.aladinInstance = A.aladin("#skyMap", {
+            survey: "P/DSS2/color",
+            fov: 90,
+            target: "0 +0",
+            showReticle: true,
+            showZoomControl: true,
+            showFullscreenControl: false,
+            showFrame: false,
+            cooFrame: "equatorial",
           });
+          state.aladinOverlay = A.graphicOverlay({
+            color: "#f87171",
+            lineWidth: 2,
+          });
+          state.aladinInstance.addOverlay(state.aladinOverlay);
           state.skyMapInitialized = true;
-          dom.skyMapStatus.textContent = "Carte active (toucher pour naviguer)";
+          dom.skyMapStatus.textContent =
+            "Carte Aladin active (toucher pour naviguer)";
         } catch (_e) {
           dom.skyMapStatus.textContent = "Erreur initialisation carte";
         }
       }
 
       function updateSkyMapForObject(obj) {
-        if (!obj || !state.skyMapInitialized || !window.Celestial) return;
+        if (
+          !obj ||
+          !state.skyMapInitialized ||
+          !window.A ||
+          !state.aladinInstance
+        )
+          return;
         if (!Number.isFinite(obj.ra) || !Number.isFinite(obj.dec)) return;
         const raDegrees = obj.ra * 15;
         try {
-          if (typeof Celestial.skyview === "function") {
-            Celestial.skyview({ date: new Date(), location: [raDegrees, obj.dec] });
+          if (typeof state.aladinInstance.gotoRaDec === "function") {
+            state.aladinInstance.gotoRaDec(raDegrees, obj.dec);
           }
-          if (typeof Celestial.redraw === "function") {
-            Celestial.redraw();
+          if (
+            state.aladinOverlay &&
+            typeof state.aladinOverlay.removeAll === "function"
+          ) {
+            state.aladinOverlay.removeAll();
+            state.aladinOverlay.add(A.circle(raDegrees, obj.dec, 1.2));
           }
           dom.skyMapStatus.textContent = `Centre: ${obj.name} (RA ${formatHms(obj.ra)} DEC ${formatDeg(obj.dec)})`;
         } catch (_e) {
@@ -776,7 +1021,9 @@
       }
 
       async function refreshSelectedObjectContext() {
-        const selected = state.cachedObjects.find((o) => o.name === state.selectedObjectName);
+        const selected = state.cachedObjects.find(
+          (o) => o.name === state.selectedObjectName,
+        );
         if (!selected) {
           updateObjectMetaPanel(null, null);
           return;
@@ -790,17 +1037,31 @@
       function getMoonPenalty(now, observer) {
         try {
           const moonEq = resolvePlanetEquatorial("Moon", now, observer);
-          const moonVis = computeVisibility(moonEq.ra, moonEq.dec, now, observer);
+          const moonVis = computeVisibility(
+            moonEq.ra,
+            moonEq.dec,
+            now,
+            observer,
+          );
           const illum = Astronomy.Illumination(Astronomy.Body.Moon, now);
           const phase01 = clamp((illum.phase_angle ?? 180) / 180, 0, 1);
           if (moonVis.altitude <= 0) return 0;
-          return clamp(Math.round((moonVis.altitude / 90) * 24 + phase01 * 16), 0, 40);
+          return clamp(
+            Math.round((moonVis.altitude / 90) * 24 + phase01 * 16),
+            0,
+            40,
+          );
         } catch (_e) {
           return 0;
         }
       }
 
-      function getVisibilityScore({ objectKind, altitude, bortleIndex, moonPenalty }) {
+      function getVisibilityScore({
+        objectKind,
+        altitude,
+        bortleIndex,
+        moonPenalty,
+      }) {
         const base = computeBaseAltitudeScore(altitude);
         let score = base;
         if (objectKind === "dso") {
@@ -816,7 +1077,8 @@
       }
 
       function getObserverHemisphere() {
-        if (!state.observer || !Number.isFinite(state.observer.latitude)) return "unknown";
+        if (!state.observer || !Number.isFinite(state.observer.latitude))
+          return "unknown";
         return state.observer.latitude >= 0 ? "north" : "south";
       }
 
@@ -832,9 +1094,17 @@
       function applyObjectFilters(list) {
         const typeFilter = state.filters.type || "all";
         const hemChoice = state.filters.hemisphere || "auto";
-        const effectiveHem = hemChoice === "auto" ? getObserverHemisphere() : hemChoice;
+        const effectiveHem =
+          hemChoice === "auto" ? getObserverHemisphere() : hemChoice;
         if (dom.filterHint) {
-          const hemLabel = effectiveHem === "unknown" ? "inconnu" : effectiveHem === "north" ? "Nord" : effectiveHem === "south" ? "Sud" : "Tous";
+          const hemLabel =
+            effectiveHem === "unknown"
+              ? "inconnu"
+              : effectiveHem === "north"
+                ? "Nord"
+                : effectiveHem === "south"
+                  ? "Sud"
+                  : "Tous";
           dom.filterHint.textContent = `Filtre actif: ${hemLabel}`;
         }
         return list.filter((obj) => {
@@ -873,19 +1143,22 @@
               objectKind: classifyObjectType(obj),
               altitude: vis.altitude,
               bortleIndex,
-              moonPenalty
-            })
+              moonPenalty,
+            }),
           };
         });
       }
 
       function renderObjectList() {
         const selected = state.selectedObjectName;
-        const sorted = applyObjectFilters([...state.cachedObjects]).sort((a, b) => b.score - a.score);
+        const sorted = applyObjectFilters([...state.cachedObjects]).sort(
+          (a, b) => b.score - a.score,
+        );
         dom.objectList.innerHTML = "";
         if (!sorted.length) {
           const empty = document.createElement("div");
-          empty.className = "text-xs text-red-400 p-2 rounded-lg bg-black/30 border border-red-900/60";
+          empty.className =
+            "text-xs text-red-400 p-2 rounded-lg bg-black/30 border border-red-900/60";
           empty.textContent = "Aucun objet ne correspond aux filtres actifs.";
           dom.objectList.appendChild(empty);
           return;
@@ -895,9 +1168,13 @@
           const isSelected = selected === obj.name;
           btn.className = [
             "w-full text-left rounded-lg p-2 border transition",
-            isSelected ? "border-red-400 bg-red-950/50" : "border-red-900/70 bg-black/30"
+            isSelected
+              ? "border-red-400 bg-red-950/50"
+              : "border-red-900/70 bg-black/30",
           ].join(" ");
-          const altText = Number.isFinite(obj.altitude) ? `${obj.altitude.toFixed(1)}°` : "--";
+          const altText = Number.isFinite(obj.altitude)
+            ? `${obj.altitude.toFixed(1)}°`
+            : "--";
           const raText = Number.isFinite(obj.ra) ? formatHms(obj.ra) : "--";
           const decText = Number.isFinite(obj.dec) ? formatDeg(obj.dec) : "--";
           btn.innerHTML = `
@@ -924,22 +1201,33 @@
         const url = state.api.statusEndpoint;
         if (!url) {
           dom.onstepState.textContent =
-            state.api.profileDetected === "blocked" ? "OnStepX: Bloque (HTTPS/local)" : "OnStepX: Hors ligne";
-          dom.onstepState.className = "text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50";
+            state.api.profileDetected === "blocked"
+              ? "OnStepX: Bloque (HTTPS/local)"
+              : "OnStepX: Hors ligne";
+          dom.onstepState.className =
+            "text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50";
           return;
         }
         try {
-          const data = await fetchJson(url, { headers: buildApiHeaders() }, 2500);
+          const data = await fetchJson(
+            url,
+            { headers: buildApiHeaders() },
+            2500,
+          );
           const m = normalizeMountData(data);
           const ra = Number.isFinite(m.ra) ? formatHms(m.ra) : "--:--:--";
           const dec = Number.isFinite(m.dec) ? formatDeg(m.dec) : "--:--:--";
           dom.mountCoords.textContent = `${ra} / ${dec}`;
-          dom.battery.textContent = Number.isFinite(m.battery) ? `${m.battery.toFixed(2)} V` : "--.- V";
+          dom.battery.textContent = Number.isFinite(m.battery)
+            ? `${m.battery.toFixed(2)} V`
+            : "--.- V";
           dom.onstepState.textContent = `OnStepX: OK (${state.api.profileDetected || "auto"})`;
-          dom.onstepState.className = "text-xs px-2 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-700/50";
+          dom.onstepState.className =
+            "text-xs px-2 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-700/50";
         } catch (_e) {
           dom.onstepState.textContent = "OnStepX: Hors ligne";
-          dom.onstepState.className = "text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50";
+          dom.onstepState.className =
+            "text-xs px-2 py-1 rounded-full bg-red-950/70 text-red-300 border border-red-700/50";
           showToast("OnStepX indisponible (CORS/timeout?)", "error");
         }
       }
@@ -968,10 +1256,14 @@
         // 7Timer indices are usually 1..8 where larger values indicate better quality.
         const s = Number(seeing);
         const t = Number(transparency);
-        if (!Number.isFinite(s) || !Number.isFinite(t)) return "Conditions astro indisponibles";
-        if (s <= 3) return "Turbulence forte: Lune visible mais details planetaires mous";
-        if (s >= 6 && t >= 6) return "Bon ciel: Lune nette et details planetaires favorables";
-        if (t <= 3) return "Transparence faible: ciel voile, objets faibles defavorises";
+        if (!Number.isFinite(s) || !Number.isFinite(t))
+          return "Conditions astro indisponibles";
+        if (s <= 3)
+          return "Turbulence forte: Lune visible mais details planetaires mous";
+        if (s >= 6 && t >= 6)
+          return "Bon ciel: Lune nette et details planetaires favorables";
+        if (t <= 3)
+          return "Transparence faible: ciel voile, objets faibles defavorises";
         return "Conditions moyennes: observation possible avec compromis";
       }
 
@@ -990,23 +1282,34 @@
           const seeing = firstSlot?.seeing;
           const transparency = firstSlot?.transparency;
           const advice = classifyAstroConditions(seeing, transparency);
-          dom.astroForecast.textContent =
-            `Astro seeing/transparence: ${seeing ?? "--"}/8 | ${transparency ?? "--"}/8 - ${advice}`;
+          dom.astroForecast.textContent = `Astro seeing/transparence: ${seeing ?? "--"}/8 | ${transparency ?? "--"}/8 - ${advice}`;
         } catch (_e) {
-          dom.astroForecast.textContent = "Astro seeing/transparence: indisponible (7Timer)";
+          dom.astroForecast.textContent =
+            "Astro seeing/transparence: indisponible (7Timer)";
         }
       }
 
       async function gotoSelectedObject() {
-        const selected = state.cachedObjects.find((o) => o.name === state.selectedObjectName);
-        if (!selected || !Number.isFinite(selected.ra) || !Number.isFinite(selected.dec)) {
+        const selected = state.cachedObjects.find(
+          (o) => o.name === state.selectedObjectName,
+        );
+        if (
+          !selected ||
+          !Number.isFinite(selected.ra) ||
+          !Number.isFinite(selected.dec)
+        ) {
           showToast("Aucun objet valide selectionne", "error");
           return;
         }
         try {
           await detectOnStepApi();
-          const endpoint = await postWithFallback("goto", gotoPayloadVariants(selected));
-          showToast(`GoTo envoye vers ${selected.name} (${endpoint.replace(getApiBaseUrl(), "")})`);
+          const endpoint = await postWithFallback(
+            "goto",
+            gotoPayloadVariants(selected),
+          );
+          showToast(
+            `GoTo envoye vers ${selected.name} (${endpoint.replace(getApiBaseUrl(), "")})`,
+          );
         } catch (_e) {
           showToast("Echec GoTo (endpoint/payload incompatible)", "error");
         }
@@ -1015,7 +1318,11 @@
       async function abortSlew() {
         try {
           await detectOnStepApi();
-          const endpoint = await postWithFallback("abort", [{}, { action: "abort" }, { cmd: "abort" }]);
+          const endpoint = await postWithFallback("abort", [
+            {},
+            { action: "abort" },
+            { cmd: "abort" },
+          ]);
           showToast(`ABORT envoye (${endpoint.replace(getApiBaseUrl(), "")})`);
         } catch (_e) {
           showToast("Echec ABORT", "error");
@@ -1058,7 +1365,7 @@
             state.observer = new Astronomy.Observer(
               pos.coords.latitude,
               pos.coords.longitude,
-              (pos.coords.altitude ?? 0) / 1000
+              (pos.coords.altitude ?? 0) / 1000,
             );
             updateGpsPanel();
             refreshAstroObjects();
@@ -1066,7 +1373,7 @@
             updateAstroForecast7Timer();
           },
           () => showToast("GPS refuse ou indisponible", "error"),
-          { enableHighAccuracy: true, maximumAge: 60000, timeout: 5000 }
+          { enableHighAccuracy: true, maximumAge: 60000, timeout: 5000 },
         );
       }
 
@@ -1083,11 +1390,16 @@
         });
         dom.saveConfig.addEventListener("click", () => {
           vibrate();
-          state.config.onstepIp = (dom.onstepIp.value || "").trim() || "192.168.0.1";
+          state.config.onstepIp =
+            (dom.onstepIp.value || "").trim() || "192.168.0.1";
           state.config.weatherKey = (dom.weatherKey.value || "").trim();
           state.config.proxyBaseUrl = normalizeBaseUrl(dom.proxyBaseUrl.value);
           state.config.proxyApiToken = (dom.proxyApiToken.value || "").trim();
-          state.config.bortleIndex = clamp(Number(dom.bortleIndex.value) || 5, 1, 9);
+          state.config.bortleIndex = clamp(
+            Number(dom.bortleIndex.value) || 5,
+            1,
+            9,
+          );
           state.config.fwProfile = dom.fwProfile.value || "auto";
           state.networkNoticeShown = false;
           state.api.statusEndpoint = null;

@@ -1,3 +1,6 @@
 start.sh.txt
 stop.sh.txt
 mobile-proxy/
+node_modules/
+aladin-lite/
+aladin-lite.tgz
