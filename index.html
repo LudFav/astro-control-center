@@ -862,7 +862,10 @@
 
         if (Array.isArray(constellations?.features)) {
           state.catalogStats.constellations = constellations.features.length;
-          if (!state.skyMapInitialized) {
+          if (
+            !state.skyMapInitialized &&
+            dom.skyMapStatus.textContent === "En attente..."
+          ) {
             dom.skyMapStatus.textContent = `Catalogue charge | ${state.catalogStats.constellations} constellations`;
           }
         }
@@ -967,29 +970,41 @@
           dom.skyMapStatus.textContent = "Aladin Lite indisponible";
           return;
         }
-        try {
-          dom.skyMap.innerHTML = "";
-          state.aladinInstance = A.aladin("#skyMap", {
-            survey: "P/DSS2/color",
-            fov: 90,
-            target: "0 +0",
-            showReticle: true,
-            showZoomControl: true,
-            showFullscreenControl: false,
-            showFrame: false,
-            cooFrame: "equatorial",
+        const mountAladin = () => {
+          try {
+            dom.skyMap.innerHTML = "";
+            state.aladinInstance = A.aladin("#skyMap", {
+              survey: "P/DSS2/color",
+              fov: 90,
+              target: "0 +0",
+              showReticle: true,
+              showZoomControl: true,
+              showFullscreenControl: false,
+              showFrame: false,
+              cooFrame: "equatorial",
+            });
+            state.aladinOverlay = A.graphicOverlay({
+              color: "#f87171",
+              lineWidth: 2,
+            });
+            state.aladinInstance.addOverlay(state.aladinOverlay);
+            state.skyMapInitialized = true;
+            dom.skyMapStatus.textContent =
+              "Carte Aladin active (toucher pour naviguer)";
+          } catch (_e) {
+            dom.skyMapStatus.textContent = "Erreur initialisation carte";
+          }
+        };
+
+        // Aladin v3 exposes an async init promise before A.aladin is ready.
+        if (A.init && typeof A.init.then === "function") {
+          dom.skyMapStatus.textContent = "Initialisation carte Aladin...";
+          A.init.then(mountAladin).catch(() => {
+            dom.skyMapStatus.textContent = "Erreur initialisation carte";
           });
-          state.aladinOverlay = A.graphicOverlay({
-            color: "#f87171",
-            lineWidth: 2,
-          });
-          state.aladinInstance.addOverlay(state.aladinOverlay);
-          state.skyMapInitialized = true;
-          dom.skyMapStatus.textContent =
-            "Carte Aladin active (toucher pour naviguer)";
-        } catch (_e) {
-          dom.skyMapStatus.textContent = "Erreur initialisation carte";
+          return;
         }
+        mountAladin();
       }
 
       function updateSkyMapForObject(obj) {
