@@ -7,9 +7,8 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Astro Control Center</title>
     <link rel="stylesheet" href="./css/tailwind.local.css" />
-    <!--<link rel="stylesheet" href="./aladin.min.css" />-->
     <script src="./astronomy.browser.min.js"></script>
-    <script src="./aladin.js"></script>
+    <script src="./aladin-lite/dist/aladin.js"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -1259,7 +1258,7 @@
         if (!Number.isFinite(s) || !Number.isFinite(t))
           return "Conditions astro indisponibles";
         if (s <= 3)
-          return "Turbulence forte: Lune visible mais details planetaires mous";
+          return "Turbulence forte: Lune visible mais details planetaires flous";
         if (s >= 6 && t >= 6)
           return "Bon ciel: Lune nette et details planetaires favorables";
         if (t <= 3)
